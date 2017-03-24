@@ -54,9 +54,11 @@ u_n = dc_d + gain_d * d_n_lag + gain_noise*sin( w_noise * n + phase_noise) + gai
 delta = 10; 
 
 %initialize the state
-init_state.P     = delta*eye(M+1);  %P     : covariance matrix
-init_state.x_bar = zeros(M+1,1);    %x_bar : (M+1)by(1) measurement matrix
-init_state.w     = zeros(M+1,1);    %w     : filter coefficients matrix
+% init_state.P     = delta*eye(M+1);  %P     : covariance matrix
+% init_state.x_bar = zeros(M+1,1);    %x_bar : (M+1)by(1) measurement matrix
+% init_state.w     = zeros(M+1,1);    %w     : filter coefficients matrix
+
+init_state = new_rls(M,delta);
 
 %get the first update
 new_meas.x = 1; %test input
