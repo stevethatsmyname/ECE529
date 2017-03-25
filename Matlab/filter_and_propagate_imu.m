@@ -11,10 +11,11 @@ fc_d = fc/fs; %cutoff frequency (digital).
 int16_max = 32767; % imu conversion ratio
 scaling_max_gyro = 500; %gyro range (deg/s);
 scaling_max_accel = 4;  %accel range (G's);
+lambda = 0.99; %forgetting factor on RLS filter
 
 use_smoothed_gyro_data = true; %for gyro only calculations use filtered input
 check_accel_validity = false;  % check to see if accelerometer orientation is valid before using to update filter.
-accelerometer_weight = 0.1;  %for complementary filter
+accelerometer_weight = 0.05;  %for complementary filter
 
 
 
@@ -260,10 +261,6 @@ for(i=1:length(imu_raw_data)) %for each file
     wa_ = zeros(3,number_of_samples);
     wg_ = zeros(3,number_of_samples);
     
-    %initialize RLS filter
-    M = 50;  %number of samples in RLS filter
-    previous_state_x = new_rls(M, 
-    
     
     for(j=50:number_of_samples)
         prev_attitude = temp_attitude;
@@ -290,6 +287,7 @@ for(i=1:length(imu_raw_data)) %for each file
         gz_filt = gz;
         
         wg = -[gx_filt; gy_filt; gz_filt]/R2D; % gyro sign is flipped
+        del_theta_gyro =  wg * dt;
         
         I_g =  prev_attitude(1,:) +cross(del_theta_gyro, prev_attitude(1,:));
         I_g = I_g / norm(I_g);
@@ -319,10 +317,7 @@ for(i=1:length(imu_raw_data)) %for each file
         ay_err = ay - accel_est(2);
         az_err = az - accel_est(3); 
         
-        new_state_x = update_rls( previous_state, new_meas ,M, lambda);
-        
-        %allow the use of a filter on accelerometer in this framework
-        %(without having to change a bunch of code later on)
+
         ax_filt = ax;
         ay_filt = ay;
         az_filt = az;

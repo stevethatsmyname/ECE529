@@ -14,7 +14,7 @@ scaling_max_accel = 4;  %accel range (G's);
 
 use_smoothed_gyro_data = true; %for gyro only calculations use filtered input
 check_accel_validity = false;  % check to see if accelerometer orientation is valid before using to update filter.
-accelerometer_weight = 0.1;  %for complementary filter
+accelerometer_weight = 0.03;  %for complementary filter
 
 
 
@@ -263,7 +263,7 @@ for(i=1:length(imu_raw_data)) %for each file
     %initialize RLS filter
     M = 50;  %number of samples in RLS filter
     delta = 100; %don't remember what delta was
-    lambda = 0.99;
+    lambda = 0.98;
     previous_state_x = new_rls(M, delta);
     previous_state_y = new_rls(M, delta);
     previous_state_z = new_rls(M, delta);
@@ -277,7 +277,7 @@ for(i=1:length(imu_raw_data)) %for each file
     rls_states_y = rls_states_x;
     rls_states_z = rls_states_y;
     
-    for(j=50:number_of_samples)
+    for(j=1:number_of_samples)
 
         prev_attitude = temp_attitude;
         
@@ -317,7 +317,7 @@ for(i=1:length(imu_raw_data)) %for each file
         
         dcm_gyro = [I_g; J_g; K_g];
         
-        accel_est = dcm_gyro * [0;0;1];
+        accel_est = dcm_gyro' * [0;0;1];
         
         
         
@@ -349,12 +349,13 @@ for(i=1:length(imu_raw_data)) %for each file
         previous_state_z = new_state_z;
         
         
-        
-        %allow the use of a filter on accelerometer in this framework
-        %(without having to change a bunch of code later on)
-        ax_filt = new_state_x.y;
-        ay_filt = new_state_y.y;
-        az_filt = new_state_z.y;
+        ax_filt = ax;
+        ay_filt = ay; 
+        az_filt = az;
+
+%         ax_filt = new_state_x.y;
+%         ay_filt = new_state_y.y;
+%         az_filt = new_state_z.y;
         
         K_b = [ax_filt, ay_filt, az_filt]/norm([ax_filt; ay_filt; az_filt]);
         % use the "Ib" from previous frame.  Then solve for Jb as the cross
@@ -424,9 +425,10 @@ for(i=1:length(imu_raw_data)) %for each file
     figure; 
     subplot(3,1,1);
     plot([ax_in(:,1), ax_out, ax_d]);
+    legend('in','out','desired');
     subplot(3,1,2);
     subplot(3,1,3);
-    legend('in','out','desired');
+    
     
     wa_filter_b =  1.0e-05 *[ 0.089848614637233   0.359394458548934   0.539091687823401   0.359394458548934   0.089848614637233];
     wa_filter_a =  [1.000000000000000  -3.835825540647347   5.520819136622225  -3.533535219463012   0.848555999266476 ];
@@ -485,8 +487,18 @@ for(i=1:length(imu_raw_data)) %for each file
     linkaxes(ax,'x');
     
     
-    
-    
-    
+    figure;
+    subplot(3,1,1)
+    plot([accel_data(:,1), [rls_states_x.y]'])
+    title('Accel Data, raw vs (RLS) filtered');
+    legend('raw','RLS');
+    xlabel('Samples');
+    ylabel('X Accel output (g)');
+    subplot(3,1,2);
+    plot([accel_data(:,2), [rls_states_y.y]'])
+    ylabel('Y Accel output (g)');
+    subplot(3,1,3);
+    plot([accel_data(:,3), [rls_states_z.y]'])
+    ylabel('Z Accel output (g)');
     
 end
