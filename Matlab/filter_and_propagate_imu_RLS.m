@@ -14,8 +14,11 @@ scaling_max_accel = 4;  %accel range (G's);
 
 use_smoothed_gyro_data = true; %for gyro only calculations use filtered input
 check_accel_validity = false;  % check to see if accelerometer orientation is valid before using to update filter.
-accelerometer_weight = 0.03;  %for complementary filter
-
+accelerometer_weight = 0.01;  %for complementary filter
+lambda = 0.99; %LMS adaptive filter forgetting factor
+%initialize RLS filter
+M = 200;  %number of samples in RLS filter
+delta = 100; %don't remember what delta was
 
 
 use_filter = 4;
@@ -260,10 +263,8 @@ for(i=1:length(imu_raw_data)) %for each file
     wa_ = zeros(3,number_of_samples);
     wg_ = zeros(3,number_of_samples);
     
-    %initialize RLS filter
-    M = 50;  %number of samples in RLS filter
-    delta = 100; %don't remember what delta was
-    lambda = 0.98;
+    
+    
     previous_state_x = new_rls(M, delta);
     previous_state_y = new_rls(M, delta);
     previous_state_z = new_rls(M, delta);
@@ -278,7 +279,7 @@ for(i=1:length(imu_raw_data)) %for each file
     rls_states_z = rls_states_y;
     
     for(j=1:number_of_samples)
-
+        
         prev_attitude = temp_attitude;
         
         if(roll_measurement_valid(j) && check_accel_validity == true)
@@ -338,7 +339,7 @@ for(i=1:length(imu_raw_data)) %for each file
         new_state_x = update_rls( previous_state_x, new_meas_x ,M, lambda);
         new_state_y = update_rls( previous_state_y, new_meas_y ,M, lambda);
         new_state_z = update_rls( previous_state_z, new_meas_z ,M, lambda);
-              
+        
         rls_states_x(j) = new_state_x;
         rls_states_y(j) = new_state_y;
         rls_states_z(j) = new_state_z;
@@ -350,12 +351,12 @@ for(i=1:length(imu_raw_data)) %for each file
         
         
         ax_filt = ax;
-        ay_filt = ay; 
+        ay_filt = ay;
         az_filt = az;
-
-%         ax_filt = new_state_x.y;
-%         ay_filt = new_state_y.y;
-%         az_filt = new_state_z.y;
+        
+        %         ax_filt = new_state_x.y;
+        %         ay_filt = new_state_y.y;
+        %         az_filt = new_state_z.y;
         
         K_b = [ax_filt, ay_filt, az_filt]/norm([ax_filt; ay_filt; az_filt]);
         % use the "Ib" from previous frame.  Then solve for Jb as the cross
@@ -422,7 +423,7 @@ for(i=1:length(imu_raw_data)) %for each file
     ax_out = [rls_states_x.y]'
     ax_d = [rls_states_x.d]';
     
-    figure; 
+    figure;
     subplot(3,1,1);
     plot([ax_in(:,1), ax_out, ax_d]);
     legend('in','out','desired');

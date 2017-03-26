@@ -10,14 +10,22 @@ if(isempty(state))
     %initialize filter
     new_state.x = zeros(N,1);  %input array (x / u )
     new_state.w = zeros(N,1);  %filter coefficients (w)
-    
+    new_state.err = 0;
+    new_state.y = 0;
     
     
 else
     
-    x_bar = [new_meas.x, state.x(2:end); ];  %'input' array
+    new_state.x = zeros(N,1);  %input array (x / u )
+    new_state.w = zeros(N,1);  %filter coefficients (w)
+    new_state.err = 0;
+    new_state.y = 0;
+     
+    x_bar = [new_meas.x; state.x(1:end-1) ];  %'input' array
     w_bar = state.w;
-    err = new_meas.d - x_bar' * w_bar;
+    
+    new_state.y = x_bar' * w_bar;
+    err = new_meas.d - new_state.y;
     
     w_n_plus_1 = w_bar + mu *(x_bar * err);
     

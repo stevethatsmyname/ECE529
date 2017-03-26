@@ -66,6 +66,8 @@ new_meas.d = 0.5; %test input
 
 rls_states(num_sample) = update_rls(init_state, new_meas, M, lambda ); %put something in the last element so that matlab will preallocate the state matrix.
 
+
+
 %update the RLS for each sample. 
 for(i=1:num_sample)
     new_meas.x = u_n(i);
