@@ -1,4 +1,4 @@
-function [ new_state ] = update_rls( previous_state, new_meas ,M, lambda)
+function [ new_state ] = update_RLS( previous_state, new_meas ,M, lambda, varargin)
 %Update RLS operates on two structures:
 % previous state
 % * P(n-1) (M+1 by M+1 matrix)
@@ -11,6 +11,17 @@ function [ new_state ] = update_rls( previous_state, new_meas ,M, lambda)
 % M : size of filter
 % lambda: forgetting factor (0 to 1)
 
+if(nargin > 4)
+   find_bias = strcmpi(varargin,'find_bias'); %include a coefficient to find the DC bias ( system identification)
+   if( ~isempty(find(find_bias)))
+       find_bias = true;
+   else
+       find_bias = false;
+   end
+   
+else
+    find_bias = false;
+end
 
 
 if(isempty(previous_state))
@@ -27,13 +38,7 @@ if(isempty(previous_state))
     
 else
     
-    new_state.x_bar = zeros(M+1,1);
-    new_state.alpha = 0;
-    new_state.g     =  zeros(M+1,1);
-    new_state.P     =  eye(M+1);  %P     : covariance matrix
-    new_state.w     =  zeros(M+1,1);    %w     : filter coefficients matrix
-    new_state.y     = 0;
-    new_state.d     = 0;
+    new_state = previous_state;  % to ensure field order is the same
     
     %first, check dimensions to make sure they match.
     size_P      = size(previous_state.P);
@@ -53,7 +58,9 @@ else
     %update state
     new_state.d = new_meas.d;
     new_state.x_bar = [new_meas.x; previous_state.x_bar(1:M)];
-    new_state.x_bar(end) = 1;
+    if(find_bias)
+        new_state.x_bar(end) = 1; % find bias : put in a constant x term to have a coefficient for a dc offset. 
+    end
     
     %update alpha
     % alpha = d(n) + (x(n)') * (w(n-1))
