@@ -1,0 +1,12 @@
+putty serial port connection details:
+
+COM3 (check device manager)
+250000 baud
+logging: all session output
+log file name: 'C:\Users\steve\Documents\git\ECE529\data\testing1.log'
+
+
+
+plink command line settings: (not finished filling these in);
+
+plink -serial COM3 -sercfg 9600,8,1,n,X

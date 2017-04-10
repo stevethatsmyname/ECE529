@@ -1,0 +1,50 @@
+From "home", move RA axis about 30 degrees left, 30 degrees right, (back to zero) at max speed.
+file: "RA 1" 
+start: 
+89, 13, 36
+90, 36, 25
+
+mid:
+
+122, 8 56
+End:
+90, 40, 33
+
+
+
+file: "Dec 1"
+start: 
+90, 40, 33
+90, 37, 42
+
+
+122 28 09
+86 59 40
+from "home", move DEC axis about 30 degrees up, 30 degrees down (back to ~zero) at max speed. 
+
+
+final: move RA and DEC at random directions 
+
+
+file "Mixed 1"
+move around at various directions, end up at approximately same location.
+start: 
+89 51 55
+90 34 12
+
+end
+90 24 07
+87 29 08
+
+
+file "Table top 1"
+sitting on table top (~0,0) for about 10 seconds
+
+file "misc handheld" 
+move around for about 10-15 seconds with 'smooth' motions, return to initial location.
+
+
+
+
+
+file "handheld axis cycle"  +x, -x, +y, -y, +z, -z
