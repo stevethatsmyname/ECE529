@@ -4,7 +4,7 @@ close all;
 %%%%%%%%%%%% CONSTANTS, COEFFICIENTS, ETC %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %SCRIPT CONTROL PARAMETERS
-user_selected_file = false;
+user_selected_file = true;
 
 
 %IMU Output parameters
@@ -19,7 +19,7 @@ scaling_max_accel = 4;  %accel range (G's), configurable
 %FILTERING PARAMETERS
 
 %complementary filter
-accelerometer_weight = 0.01;  %for complementary filter
+accelerometer_weight = 0.1;  %for complementary filter
 
 %RLS
 lambda = 0.99; %forgetting factor on RLS filter
@@ -36,7 +36,7 @@ M = 50;  %number of samples in RLS/LMS FIR filters
 %%%%%%%%%%%%%%  GET IMU DATA FROM FILE  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if(user_selected_file == true)
-    [file_nm path_nm] = uigetfile('*.txt','Select IMU output txt file');
+    [file_nm path_nm] = uigetfile({'*.txt;*.log','.txt, .log'},'Select IMU output txt file');
     
     if(~iscell(file_nm))
         file_nm = {file_nm};
@@ -78,6 +78,9 @@ for(i=1:length(imu_data))
     gyro_data = imu_data{i}.gyro;
     accel_data = imu_data{i}.accel;
     number_of_samples = size(gyro_data,1);
+    
+    %time array
+    t = (1:number_of_samples) * dt;
     
     %initialize attitude - identity matrix
     initial_attitude = eye(3);
@@ -247,18 +250,68 @@ for(i=1:length(imu_data))
         [f_y, w] = freqz(RLS_state_Y.w);
         [f_z, w] = freqz(RLS_state_Z.w);
     end
+        [f_x_LMS, w] = freqz(LMS_state_X.w);
+        [f_y_LMS, w] = freqz(LMS_state_Y.w);
+        [f_z_LMS, w] = freqz(LMS_state_Z.w);
+    
     figure;
     % look at the final frequency response of the LMS filter
     
-    subplot(3,1,1);
-    semilogy(w,abs(f_x));
+%     subplot(3,1,1);
+%     semilogy(w/pi,abs(f_x));
+%     title('Final RLS filter frequency response (x)');
+%     subplot(3,1,2);
+%     semilogy(w/pi,abs(f_y));
+%     title('Final RLS filter frequency response (y)');
+%     subplot(3,1,3);
+%     semilogy(w/pi,abs(f_z));
+%     title('Final RLS filter frequency response (z)');
+%     xlabel('Frequency (radians/pi)');
     
-    subplot(3,1,2);
-    semilogy(w,abs(f_y));
-    subplot(3,1,3);
-    semilogy(w,abs(f_z));
+    
+    figure; %try plotting all 3 on one axis
+    subplot(2,1,1);
+    freq_LMS = abs([f_x_LMS, f_y_LMS, f_z_LMS]);
+    semilogy(w/pi,freq_LMS,'linewidth',2);
+    legend('x','y','z');
+    title('LMS Filter final frequency response');
+    ax(2) = gca;
+    subplot(2,1,2);
+    freq_RLS = abs([f_x, f_y, f_z]);
+    semilogy(w/pi,freq_RLS,'linewidth',2)
+    ax(1) = gca;
+    title('RLS Filter final frequency response','linewidth',2);
+    
+ 
     
     % plot euler angles on attitude estimate.  
+    
+    
+    euler_roll_LMS = atan2(current_attitude_LMS_array(:,2,3), current_attitude_LMS_array(:,3,3));
+    euler_pitch_LMS  = -asin(current_attitude_LMS_array(:,1,3));
+    euler_yaw_LMS= atan2(current_attitude_LMS_array(:,1,2), current_attitude_LMS_array(:,1,1));
+
+    
+    figure; plot(t,[euler_roll_LMS, euler_pitch_LMS, euler_yaw_LMS],'linewidth',2);
+    title('LMS attitude estimate');
+    
+    
+    euler_roll_RLS = atan2(current_attitude_RLS_array(:,2,3), current_attitude_RLS_array(:,3,3));
+    euler_yaw_RLS= atan2(current_attitude_RLS_array(:,1,2), current_attitude_RLS_array(:,1,1));
+    euler_pitch_RLS  = -asin(current_attitude_RLS_array(:,1,3));
+    
+    figure; plot(t,[euler_roll_RLS, euler_pitch_RLS, euler_yaw_RLS],'linewidth',2);
+    title('RLS attitude estimate');
+    legend('roll','pitch','yaw');
+    
+    euler_roll_Compl = atan2(current_attitude_DCM_array(:,2,3), current_attitude_DCM_array(:,3,3));
+    euler_yaw_Compl= atan2(current_attitude_DCM_array(:,1,2), current_attitude_DCM_array(:,1,1));
+    euler_pitch_Compl  = -asin(current_attitude_DCM_array(:,1,3));
+    
+    figure; plot(t,[euler_roll_Compl, euler_pitch_Compl, euler_yaw_Compl],'linewidth',2);
+    title('Complementary filter attitude estimate');    
+    
+    
 
     
     
